@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мировая Библиотека | Книги со всего мира</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --bg: #f4f4f4;
+            --card-bg: #ffffff;
+            --text: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Шапка */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .search-bar {
+            flex-grow: 1;
+            max-width: 500px;
+            display: flex;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px 0 0 20px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            background-color: var(--accent);
+            border: none;
+            border-radius: 0 20px 20px 0;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .search-bar button:hover {
+            background-color: #d35400;
+        }
+
+        /* Фильтры */
+        .filters {
+            margin: 30px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Сетка книг */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .book-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        /* Контейнер обложки — фиксированные пропорции */
+        .book-cover-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            overflow: hidden;
+            background: #e9e9e9;
+        }
+
+        .book-cover-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            display: block;
+        }
+
+        .book-card:hover .book-cover-wrap img {
+            transform: scale(1.08);
+        }
+
+        /* Заглушка, если картинка не загрузилась */
+        .cover-fallback {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            text-align: center;
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .cover-fallback .fb-title {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .cover-fallback .fb-author {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            font-style: italic;
+        }
+
+        .cover-fallback .fb-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .country-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 2;
+        }
+
+        /* Кнопка увеличения обложки */
+        .zoom-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            z-index: 2;
+        }
+
+        .book-card:hover .zoom-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .zoom-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .book-info {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .book-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+            line-height: 1.3;
+        }
+
+        .book-author {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .book-desc {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        .book-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .genre-tag {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
+        .btn-buy {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-buy:hover {
+            background: #d35400;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Подвал */
+        footer {
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .no-results {
+            text-align: center;
+            grid-column: 1 / -1;
+            font-size: 1.2rem;
+            color: #777;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container header-content">
+            <div class="logo">Мировая<span>Библиотека</span></div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Поиск по названию или автору...">
+                <button onclick="filterBooks()">Найти</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="filters" id="filters">
+            <button class="filter-btn active" onclick="filterByGenre('all')">Все</button>
+            <button class="filter-btn" onclick="filterByGenre('Роман')">Роман</button>
+            <button class="filter-btn" onclick="filterByGenre('Фантастика')">Фантастика</button>
+            <button class="filter-btn" onclick="filterByGenre('Детектив')">Детектив</button>
+            <button class="filter-btn" onclick="filterByGenre('Классика')">Классика</button>
+            <button class="filter-btn" onclick="filterByGenre('Фэнтези')">Фэнтези</button>
+            <button class="filter-btn" onclick="filterByGenre('Современная проза')">Современная проза</button>
+        </div>
+
+        <div class="books-grid" id="booksGrid"></div>
+    </main>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="coverModal">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <img id="modalImg" src="" alt="Обложка книги">
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Мировая Библиотека. Все книги мира в одном месте.</p>
+    </footer>
+
+    <script>
+        // База книг: расширена, включает бестселлеры Яндекс/Литрес и мировую классику
+        const books = [
+            // --- Популярное на Яндекс Маркет / Литрес (по данным обзоров) ---
+            {
+                id: 1,
+                title: "Если все кошки в мире исчезнут",
+                author: "Гэнки Кавамура",
+                country: "Япония",
+                genre: "Современная проза",
+                desc: "Лидер продаж на маркетплейсах. Философская история о потерях и выборе.",
+                isbn: "9785389168596"
+            },
+            {
+                id: 2,
+                title: "По осколкам твоего сердца",
+                author: "Анна Джейн",
+                country: "Россия",
+                genre: "Роман",
+                desc: "Бестселлер Литрес. Эмоциональный роман о любви и боли.",
+                isbn: "9785041234567"
+            },
+            {
+                id: 3,
+                title: "К себе нежно",
+                author: "Ольга Примаченко",
+                country: "Россия",
+                genre: "Современная проза",
+                desc: "Книга о бережном отношении к себе, стабильный бестселлер маркетплейсов.",
+                isbn: "9785041134567"
+            },
+            {
+                id: 4,
+                title: "Ониксовый шторм",
+                author: "Ребекка Яррос",
+                country: "США",
+                genre: "Фэнтези",
+                desc: "Продолжение «Четвертого крыла». Лидер фэнтези на Яндекс Маркете.",
+                isbn: "9785389187654"
+            },
+            {
+                id: 5,
+                title: "Копия Веры",
+                author: "Катя Качур",
+                country: "Россия",
+                genre: "Современная проза",
+                desc: "Второе место в рейтинге Литрес летом 2026. Трогательная история.",
+                isbn: "9785041987654"
+            },
+
+            // --- Мировая классика (по данным Goodreads / LiveLib) ---
+            {
+                id: 6,
+                title: "Мастер и Маргарита",
+                author: "Михаил Булгаков",
+                country: "Россия",
+                genre: "Классика",
+                desc: "Мистический роман о добре и зле, любви и трусости.",
+                isbn: "9785389075153"
+            },
+            {
+                id: 7,
+                title: "1984",
+                author: "Джордж Оруэлл",
+                country: "Великобритания",
+                genre: "Фантастика",
+                desc: "Антиутопия о тоталитарном обществе и Большом Брате.",
+                isbn: "9780451524935"
+            },
+            {
+                id: 8,
+                title: "Убить пересмешника",
+                author: "Харпер Ли",
+                country: "США",
+                genre: "Роман",
+                desc: "История о расовой несправедливости глазами ребенка.",
+                isbn: "9780060935467"
+            },
+            {
+                id: 9,
+                title: "Шерлок Холмс",
+                author: "Артур Конан Дойл",
+                country: "Великобритания",
+                genre: "Детектив",
+                desc: "Приключения гениального сыщика с Бейкер-стрит.",
+                isbn: "9780553328257"
+            },
+            {
+                id: 10,
+                title: "Гарри Поттер и философский камень",
+                author: "Дж. К. Роулинг",
+                country: "Великобритания",
+                genre: "Фэнтези",
+                desc: "Мальчик узнает, что он волшебник, и отправляется в Хогвартс.",
+                isbn: "9780747532699"
+            },
+            {
+                id: 11,
+                title: "Три товарища",
+                author: "Эрих Мария Ремарк",
+                country: "Германия",
+                genre: "Роман",
+                desc: "История о дружбе и любви в послевоенной Германии.",
+                isbn: "9780449912553"
+            },
+            {
+                id: 12,
+                title: "Сто лет одиночества",
+                author: "Габриэль Гарсиа Маркес",
+                country: "Колумбия",
+                genre: "Роман",
+                desc: "Магический реализм о семье Буэндиа в городе Макондо.",
+                isbn: "9780060883287"
+            },
+            {
+                id: 13,
+                title: "Дюна",
+                author: "Фрэнк Герберт",
+                country: "США",
+                genre: "Фантастика",
+                desc: "Эпическая сага о пустынной планете и специи.",
+                isbn: "9780441172719"
+            },
+            {
+                id: 14,
+                title: "Двенадцать стульев",
+                author: "Ильф и Петров",
+                country: "Россия",
+                genre: "Классика",
+                desc: "Сатирическое приключение Остапа Бендера в поисках бриллиантов.",
+                isbn: "9785389008281"
+            },
+            {
+                id: 15,
+                title: "Игра престолов",
+                author: "Джордж Р. Р. Мартин",
+                country: "США",
+                genre: "Фэнтези",
+                desc: "Борьба за Железный трон в Вестеросе.",
+                isbn: "9780553593716"
+            },
+
+            // --- Дополнительные всемирно известные книги ---
+            {
+                id: 16,
+                title: "Проект «Аве Мария»",
+                author: "Энди Вейер",
+                country: "США",
+                genre: "Фантастика",
+                desc: "Ученый просыпается на корабле с амнезией и должен спасти Землю.",
+                isbn: "9780593135204"
+            },
+            {
+                id: 17,
+                title: "Горничная",
+                author: "Фрейда Макфадден",
+                country: "США",
+                genre: "Детектив",
+                desc: "Психологический триллер об идеальной работе, ставшей кошмаром.",
+                isbn: "9781250766582"
+            },
+            {
+                id: 18,
+                title: "Четвертое крыло",
+                author: "Ребекка Яррос",
+                country: "США",
+                genre: "Фэнтези",
+                desc: "Бестселлер в жанре романтического фэнтези о драконах и академии.",
+                isbn: "9781649374042"
+            },
+            {
+                id: 19,
+                title: "Цветы для Элджернона",
+                author: "Дэниел Киз",
+                country: "США",
+                genre: "Фантастика",
+                desc: "Классика о человеке, который стал гением после эксперимента.",
+                isbn: "9780156030083"
+            },
+            {
+                id: 20,
+                title: "451° по Фаренгейту",
+                author: "Рэй Брэдбери",
+                country: "США",
+                genre: "Фантастика",
+                desc: "Антиутопия о мире, где книги сжигают.",
+                isbn: "9781451673319"
+            },
+            {
+                id: 21,
+                title: "Портрет Дориана Грея",
+                author: "Оскар Уайльд",
+                country: "Ирландия",
+                genre: "Классика",
+                desc: "Философский роман о красоте, морали и цене бессмертия души.",
+                isbn: "9780141439570"
+            },
+            {
+                id: 22,
+                title: "Маленький принц",
+                author: "Антуан де Сент-Экзюпери",
+                country: "Франция",
+                genre: "Классика",
+                desc: "Философская сказка, которую любят во всем мире.",
+                isbn: "9780156012195"
+            },
+            {
+                id: 23,
+                title: "Вегетарианка",
+                author: "Хан Ган",
+                country: "Южная Корея",
+                genre: "Современная проза",
+                desc: "Лауреат Букеровской премии. Шокирующая история об отказе от мяса.",
+                isbn: "9780553448184"
+            },
+            {
+                id: 24,
+                title: "Атмосфера",
+                author: "Тейлор Дженкинс Рид",
+                country: "США",
+                genre: "Роман",
+                desc: "Исторический роман с кинематографичной атмосферой, популярный на Goodreads.",
+                isbn: "9781982123456"
+            }
+        ];
+
+        const booksGrid = document.getElementById('booksGrid');
+        const searchInput = document.getElementById('searchInput');
+        const modal = document.getElementById('coverModal');
+        const modalImg = document.getElementById('modalImg');
+        let currentGenre = 'all';
+
+        // Формирует URL обложки по ISBN через Open Library
+        function getCoverUrl(isbn, size = 'L') {
+            return `https://covers.openlibrary.org/b/isbn/${isbn}-${size}.jpg`;
+        }
+
+        // Экранирование HTML
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Рендер одной карточки
+        function createCard(book) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+
+            const coverUrl = getCoverUrl(book.isbn, 'L');
+
+            card.innerHTML = `
+                <div class="book-cover-wrap">
+                    <span class="country-badge">${escapeHtml(book.country)}</span>
+                    <img
+                        src="${coverUrl}"
+                        alt="Обложка книги «${escapeHtml(book.title)}»"
+                        loading="lazy"
+                        onerror="handleCoverError(this)"
+                    >
+                    <button class="zoom-btn" title="Увеличить обложку" onclick="openModal('${coverUrl}')">🔍</button>
+                </div>
+                <div class="book-info">
+                    <div class="book-title">${escapeHtml(book.title)}</div>
+                    <div class="book-author">${escapeHtml(book.author)}</div>
+                    <div class="book-desc">${escapeHtml(book.desc)}</div>
+                    <div class="book-meta">
+                        <span class="genre-tag">${escapeHtml(book.genre)}</span>
+                        <button class="btn-buy" onclick="addToCart('${escapeHtml(book.title).replace(/'/g, "\\'")}')">Купить</button>
+                    </div>
+                </div>
+            `;
+
+            const img = card.querySelector('img');
+            img.dataset.title = book.title;
+            img.dataset.author = book.author;
+
+            return card;
+        }
+
+        // Обработка ошибки загрузки обложки
+        function handleCoverError(imgEl) {
+            const wrap = imgEl.parentElement;
+            if (wrap.querySelector('.cover-fallback')) return;
+
+            imgEl.style.display = 'none';
+
+            const fallback = document.createElement('div');
+            fallback.className = 'cover-fallback';
+            fallback.innerHTML = `
+                <div class="fb-icon">📖</div>
+                <div class="fb-title">${escapeHtml(imgEl.dataset.title || '')}</div>
+                <div class="fb-author">${escapeHtml(imgEl.dataset.author || '')}</div>
+            `;
+            wrap.appendChild(fallback);
+
+            const zoomBtn = wrap.querySelector('.zoom-btn');
+            if (zoomBtn) zoomBtn.style.display = 'none';
+        }
+
+        function renderBooks(booksToRender) {
+            booksGrid.innerHTML = '';
+
+            if (booksToRender.length === 0) {
+                booksGrid.innerHTML = '<div class="no-results">Книги не найдены. Попробуйте изменить запрос.</div>';
+                return;
+            }
+
+            booksToRender.forEach(book => {
+                booksGrid.appendChild(createCard(book));
+            });
+        }
+
+        function filterByGenre(genre) {
+            currentGenre = genre;
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === (genre === 'all' ? 'Все' : genre)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            const filtered = books.filter(book => {
+                const matchesGenre = currentGenre === 'all' || book.genre === currentGenre;
+                const matchesSearch =
+                    book.title.toLowerCase().includes(searchTerm) ||
+                    book.author.toLowerCase().includes(searchTerm) ||
+                    book.country.toLowerCase().includes(searchTerm);
+                return matchesGenre && matchesSearch;
+            });
+
+            renderBooks(filtered);
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        function filterBooks() { applyFilters(); }
+
+        // Модальное окно
+        function openModal(url) {
+            modalImg.src = url;
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('open');
+            modalImg.src = '';
+            document.body.style.overflow = '';
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+        });
+
+        function addToCart(title) {
+            alert(`Книга «${title}» добавлена в корзину!`);
+        }
+
+        // Первичная загрузка
+        renderBooks(books);
+    </script>
+</body>
+</html>
